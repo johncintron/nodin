@@ -1,0 +1,15 @@
+105040315 - obj moveType=3, obj moveType=2
+105040314 - obj moveType=1
+220060400 - bg moveR!=0
+230010201 - bg moveType=1
+220070400 - bg moveType=2
+200090010 - obj moveR!=0
+610020000 - obj moveType=1
+230010001 - obj flow=1 cx<0
+925100200 - obj flow=1 cx>0
+230010001 - obj flow=2 cy>0
+230010200 - obj flow=1 cx=null
+230010200 - obj flow=2 cy=null
+670010600 - obj flow=3
+100040105 - portal pt=11 image!=null
+220070400 - portal pt=11 image=null

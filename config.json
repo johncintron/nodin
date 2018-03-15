@@ -1,0 +1,4 @@
+{
+    "PORT": 8000,
+    "SERVER_WZ_ROOT_DIR": "./wz_server/"
+}

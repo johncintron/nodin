@@ -1,11 +1,12 @@
+import AudioManager from './audiomanager';
 import DRAW_IMAGE from './drawimage';
 import GameCanvas from './gamecanvas';
-import WZManager from './wzmanager';
 import PLAY_AUDIO from './playaudio';
+import WZManager from './wzmanager';
 
 const UICommon = {};
 
-UICommon.initialize = async function() {
+UICommon.initialize = async function () {
   const cursor = await WZManager.get('UI.wz/Basic.img/Cursor');
 
   this.cursorImg = cursor[0][0].nGetImage();
@@ -21,18 +22,18 @@ UICommon.initialize = async function() {
   this.hoverAudio = sounds.BtMouseOver.nGetAudio();
 };
 
-UICommon.playMouseClickAudio = function() {
-  PLAY_AUDIO(this.clickAudio);
+UICommon.playMouseClickAudio = function () {
+  PLAY_AUDIO(this.clickAudio, AudioManager.SFXVolume);
 };
 
-UICommon.playMouseHoverAudio = function() {
-  PLAY_AUDIO(this.hoverAudio);
+UICommon.playMouseHoverAudio = function () {
+  PLAY_AUDIO(this.hoverAudio, AudioManager.SFXVolume);
 };
 
-UICommon.doUpdate = function(msPerTick) {
+UICommon.doUpdate = function (msPerTick) {
 };
 
-UICommon.doRender = function(camera, lag, msPerTick, tdelta) {
+UICommon.doRender = function (camera, lag, msPerTick, tdelta) {
   const clicked = GameCanvas.clicked;
   const cursorImg = !clicked ? this.cursorImg : this.cursorDownImg;
   const cursorOrigin = !clicked ? this.cursorOrigin : this.cursorDownOrigin;

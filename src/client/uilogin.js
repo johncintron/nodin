@@ -111,7 +111,7 @@ UILogin.doUpdate = function(msPerTick, camera) {
     this.loginButton.stance = 'normal';
 
     if (this.activeButton === this.loginButton) {
-      UICommon.playMouseHoverAudio();
+      UICommon.playMouseHoverAudio(1);
       this.loginButton.stance = 'mouseOver';
     }
   }
@@ -129,7 +129,7 @@ UILogin.doUpdate = function(msPerTick, camera) {
       this.loginButton.stance = 'mouseOver';
       const trigger = releasedClick && originallyClickedLoginButton;
       if (trigger) {
-        UICommon.playMouseClickAudio();
+        UICommon.playMouseClickAudio(1);
         console.log('login!');
       }
     }
@@ -141,7 +141,7 @@ UILogin.doUpdate = function(msPerTick, camera) {
     if (releasedClick && originallyClickedDice && this.canClickDice) {
       this.canClickDice = false;
       this.updateDice = true;
-      UICommon.playMouseClickAudio();
+      UICommon.playMouseClickAudio(1);
     }
   }
 

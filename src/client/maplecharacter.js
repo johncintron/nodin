@@ -1,3 +1,4 @@
+import AudioManager from './audiomanager';
 import WZManager from './wzmanager';
 import DRAW_IMAGE from './drawimage';
 import DRAW_TEXT from './drawtext';
@@ -80,13 +81,13 @@ class MapleCharacter {
     await this.setHair(this.hair);
     this.setStance(this.stance);
   }
-  async setSkinColor(sc=0) {
+  async setSkinColor(sc = 0) {
     this.head = await WZManager.get(`Character.wz/0001200${sc}.img`);
     this.body = await WZManager.get(`Character.wz/0000200${sc}.img`);
     this.baseBody = await WZManager.get(`Character.wz/00002000.img`);
     this.skinColor = sc;
   }
-  setStance(stance='stand1', frame=0) {
+  setStance(stance = 'stand1', frame = 0) {
     if (!!this.baseBody[stance]) {
       this.stance = stance;
       this.setFrame(frame);
@@ -94,7 +95,7 @@ class MapleCharacter {
       this.oscillateFactor = 1;
     }
   }
-  setFrame(frame=0, carryOverDelay=0) {
+  setFrame(frame = 0, carryOverDelay = 0) {
     this.frame = !this.baseBody[this.stance][frame] ? 0 : frame;
 
     this.delay = carryOverDelay;
@@ -107,31 +108,31 @@ class MapleCharacter {
     if (!this.oscillateFrames) {
       this.setFrame(this.frame + 1, carryOverDelay);
     } else {
-      const nextFrame = this.frame + 1*this.oscillateFactor;
+      const nextFrame = this.frame + 1 * this.oscillateFactor;
       if (!this.baseBody[this.stance][nextFrame]) {
         this.oscillateFactor *= -1;
       }
-      const nextOscillatedFrame = this.frame + 1*this.oscillateFactor;
+      const nextOscillatedFrame = this.frame + 1 * this.oscillateFactor;
       this.setFrame(nextOscillatedFrame, carryOverDelay);
     }
   }
-  async setFace(face=20000) {
+  async setFace(face = 20000) {
     this.Face = await WZManager.get(`Character.wz/Face/000${face}.img`);
     this.face = face;
   }
-  setFaceExpr(faceExpr='blink', faceFrame=0) {
+  setFaceExpr(faceExpr = 'blink', faceFrame = 0) {
     if (!!this.Face[faceExpr]) {
       this.faceExpr = faceExpr;
       this.setFaceFrame(faceFrame);
     }
   }
-  setFaceFrame(faceFrame=0) {
+  setFaceFrame(faceFrame = 0) {
     this.faceFrame = !this.Face[this.faceExpr][faceFrame] ? 0 : faceFrame;
   }
   advanceFaceFrame() {
     this.setFaceFrame(this.faceFrame + 1);
   }
-  async setHair(hair=30030) {
+  async setHair(hair = 30030) {
     this.Hair = await WZManager.get(`Character.wz/Hair/000${hair}.img`);
     this.hair = hair;
   }
@@ -214,7 +215,7 @@ class MapleCharacter {
     const lu = await WZManager.get('Effect.wz/BasicEff.img/LevelUp');
     this.levelUpFrames = lu.nChildren;
 
-    PLAY_AUDIO(levelUpAudio);
+    PLAY_AUDIO(levelUpAudio, AudioManager.SFXVolume);
     this.levelingUp = true;
     this.levelUpFrame = 0;
     this.levelUpDelay = 0;
@@ -257,8 +258,8 @@ class MapleCharacter {
     const twoChars = /.{1,2}/g;
     const [hat, faceAcc, ...equips] = this.equips;
 
-    const hatVslot = !hat? '' : hat.info.vslot.nValue;
-    const hatParts = !hat? [] : getParts(hat).filter(isDrawable);
+    const hatVslot = !hat ? '' : hat.info.vslot.nValue;
+    const hatParts = !hat ? [] : getParts(hat).filter(isDrawable);
     const hatSmapValues = hatParts.reduce((acc, p) => {
       try {
         const part = p.nTagName === 'uol' ? p.nResolveUOL() : p;
@@ -309,7 +310,7 @@ class MapleCharacter {
       });
 
       const originX = part.origin.nX;
-      const adjustX = !flipped ? originX : (part.nWidth-originX);
+      const adjustX = !flipped ? originX : (part.nWidth - originX);
       x -= adjustX;
       y -= part.origin.nY;
 
@@ -432,7 +433,7 @@ class MapleCharacter {
       align: 'center',
     };
     const nameWidth = Math.ceil(MEASURE_TEXT(nameOpts).width + tagPadding);
-    const nameTagX = Math.round(this.x - camera.x - nameWidth/2);
+    const nameTagX = Math.round(this.x - camera.x - nameWidth / 2);
     DRAW_RECT({
       x: nameTagX,
       y: Math.floor(this.y - camera.y + offsetFromY),

@@ -1,3 +1,4 @@
+import AudioManager from './audiomanager';
 import WZManager from './wzmanager';
 import PLAY_AUDIO from './playaudio';
 import DRAW_IMAGE from './drawimage';
@@ -49,7 +50,7 @@ class Monster {
 
     this.setFrame(!this.stances.fly ? 'stand' : 'fly', 0);
   }
-  loadStance(wzNode={}, stance='stand') {
+  loadStance(wzNode = {}, stance = 'stand') {
     if (!wzNode[stance]) {
       return {
         frames: [],
@@ -73,7 +74,7 @@ class Monster {
   }
   playAudio(name) {
     if (!!this.sounds[name]) {
-      PLAY_AUDIO(this.sounds[name]);
+      PLAY_AUDIO(this.sounds[name], AudioManager.SFXVolume);
     }
   }
   die() {
@@ -84,7 +85,7 @@ class Monster {
   destroy() {
     this.destroyed = true;
   }
-  setFrame(stance, frame=0, carryOverDelay=0) {
+  setFrame(stance, frame = 0, carryOverDelay = 0) {
     if (!this.stances[stance]) {
       return;
     }
@@ -101,12 +102,12 @@ class Monster {
     this.delay += msPerTick;
 
     if (this.delay > this.nextDelay) {
-      const hasNextFrame = !!this.stances[this.stance].frames[this.frame+1];
+      const hasNextFrame = !!this.stances[this.stance].frames[this.frame + 1];
       if (!!this.dying && !hasNextFrame) {
         this.destroy();
         return;
       }
-      this.setFrame(this.stance, this.frame+1, this.delay-this.nextDelay);
+      this.setFrame(this.stance, this.frame + 1, this.delay - this.nextDelay);
     }
   }
   draw(camera, lag, msPerTick, tdelta) {
@@ -116,12 +117,12 @@ class Monster {
     const originX = currentFrame.nGet('origin').nGet('nX', 0);
     const originY = currentFrame.nGet('origin').nGet('nY', 0);
 
-    const adjustX = !this.flipped ? originX : (currentFrame.nWidth-originX);
+    const adjustX = !this.flipped ? originX : (currentFrame.nWidth - originX);
 
     DRAW_IMAGE({
       img: currentImage,
-      dx: this.x-camera.x-adjustX,
-      dy: this.y-camera.y-originY,
+      dx: this.x - camera.x - adjustX,
+      dy: this.y - camera.y - originY,
       flipped: !!this.flipped,
     });
   }

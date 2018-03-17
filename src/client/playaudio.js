@@ -8,9 +8,10 @@
  * @param {Audio} audio - The audio object.
  * @param {float} [volume=1] - Loudness of audio.
  */
-function PLAY_AUDIO(audio, volume=1) {
+
+function PLAY_AUDIO(audio, vol) {
   const concurrentAudio = audio.cloneNode();
-  concurrentAudio.volume = volume;
+  concurrentAudio.volume = vol;
   concurrentAudio.play();
 }
 

@@ -247,4 +247,9 @@ GameCanvas.resetMousewheel = function() {
   this.scrolledDown = false;
 };
 
+GameCanvas.releaseFocusInput = function() {
+  this.pressedKeys[this.keys.enter] = false;
+  this.game.focus();
+}
+
 export default GameCanvas;

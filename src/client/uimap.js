@@ -28,11 +28,11 @@ UIMap.initialize = async function() {
     this.chat.input.value = '';
     if (msg[0] === '!') {
       const [command, ...commandArgs] = msg.split(' ');
-      console.log(command);
+      console.log(command, commandArgs);
       switch (command) {
         case "!level": {
           const level = Number(commandArgs[0]);
-          if (level > 250 || level < 1) {
+          if (!Number.isInteger(level) || level > 250 || level < 1) {
             break;
           }
           if (level > MyCharacter.level) {
@@ -43,6 +43,9 @@ UIMap.initialize = async function() {
         }
         case "!map": {
           const mapId = Number(commandArgs[0]);
+          if (!Number.isInteger(mapId)) {
+            break;
+          }
           MapleMap.load(mapId);
           break;
         }

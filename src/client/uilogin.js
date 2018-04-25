@@ -113,6 +113,7 @@ UILogin.initialize = async function() {
         return stances;
       }, {}),
       active: false,
+      id: i,
       update: msPerTick => {
       },
       draw: (camera, lag, msPerTick, tdelta) => {
@@ -129,6 +130,39 @@ UILogin.initialize = async function() {
     });
     MapleMap.objects.push(this.worlds[i]);
   }
+  
+  this.worldLogoX = -135;
+  this.worldLogoY = -680;
+  this.worldLogo = {
+    stance: 0,
+    stances: uiLogin.WorldSelect.world.nChildren.reduce((stances, stance) => {
+      const no = Number(stance.nName);
+      if (!Number.isNaN(no)) {
+        stances[no] = stance;
+      }
+      return stances;
+    }, {}),
+    update: msPerTick => {
+    },
+    draw: (camera, lag, msPerTick, tdelta) => {
+      if (this.scroll.open) {
+        const currentFrame = this.worldLogo.stances[this.worldLogo.stance];
+        const currentImage = currentFrame.nGetImage();
+        DRAW_IMAGE({
+          img: currentImage,
+          dx: this.worldLogoX - camera.x,
+          dy: this.worldLogoY - camera.y,
+        });
+      }
+    },
+    layer: 2,
+  };
+  MapleMap.objects.push(this.worldLogo);
+  
+  this.channelsX = -210;
+  this.channelsY = -700;
+  this.channels = [];
+  // TODO Implement channels (uiLogin.WorldSelect.channel)
 };
 
 UILogin.doUpdate = function(msPerTick, camera) {
@@ -214,8 +248,7 @@ UILogin.doUpdate = function(msPerTick, camera) {
       const trigger = releasedClick && originallyClickedLoginButton;
       if (trigger) {
         UICommon.playMouseClickAudio();
-        this.inputUsn.remove();
-        this.inputPwd.remove();
+        this.removeInputs();
         console.log('login!');
         camera.y -= 600;
       }
@@ -242,10 +275,11 @@ UILogin.doUpdate = function(msPerTick, camera) {
       world.stance = 'mouseOver';
       const trigger = releasedClick && originallyClickedWorld;
       if (trigger) {
+        UICommon.playMouseClickAudio();
         this.worlds.forEach(w => w.active = false);
         world.active = true;
         this.scroll.open = true;
-        UICommon.playMouseClickAudio();
+        this.worldLogo.stance = world.id;
         console.log('World clicked');
       }
     }

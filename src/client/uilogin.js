@@ -14,7 +14,8 @@ const UILogin = {};
 UILogin.initialize = async function() {
   await UICommon.initialize();
   const uiLogin = await WZManager.get('UI.wz/Login.img');
-
+  console.dir(uiLogin);
+  this.NUMBER_OF_WORLDS = 20;
   this.clicked = false;
   this.lastClickedPosition = {};
   this.activeButton = null;
@@ -69,6 +70,34 @@ UILogin.initialize = async function() {
   this.diceDelay = 100;
 
   this.newCharStats = Random.generateDiceRollStats();
+
+  this.worldsX = 260;
+  this.worldsY = -800;
+  this.worlds = [];
+  for(let i = 0; i < this.NUMBER_OF_WORLDS; i++) {
+    this.worlds.push(
+        {
+            stance: 'normal',
+            stances: uiLogin.WorldSelect.BtWorld[i].nChildren.reduce((stances, stance) => {
+              stances[stance.nName] = stance.nChildren[0];
+              return stances;
+            }, {}),
+            update: msPerTick => {
+            },
+            draw: (camera, lag, msPerTick, tdelta) => {
+              const currentFrame = this.worlds[i].stances[this.worlds[i].stance];
+              const currentImage = currentFrame.nGetImage();
+              DRAW_IMAGE({
+                  img: currentImage,
+                  dx: this.worldsX - camera.x - 24 * i,
+                  dy: this.worldsY - camera.y
+              });
+            },
+            layer: 2,
+        }
+    );
+    MapleMap.objects.push(this.worlds[i]);
+  }
 };
 
 UILogin.doUpdate = function(msPerTick, camera) {
@@ -104,15 +133,39 @@ UILogin.doUpdate = function(msPerTick, camera) {
     currActiveButton = this.dice;
   }
 
+  let worldRect = undefined;
+  let world = undefined;
+  for (let i = 0; i < this.NUMBER_OF_WORLDS; i++) {
+    world = this.worlds[i];
+    const worldImage = world.stances.normal.nGetImage();
+    worldRect = {
+      x: this.worldsX - camera.x - 24 * i,
+      y: this.worldsY - camera.y,
+      width: worldImage.width,
+      height: worldImage.height,
+    };
+    const hoverWorld = GUIUtil.pointInRectangle(mousePoint, worldRect);
+    if (hoverWorld) {
+      currActiveButton = world;
+      break;
+    }
+  }
+
   if (lastActiveButton !== currActiveButton) {
     this.activeButton = currActiveButton;
 
     // reset all buttons
     this.loginButton.stance = 'normal';
+    this.worlds.forEach(w => w.stance = 'normal');
 
     if (this.activeButton === this.loginButton) {
       UICommon.playMouseHoverAudio();
       this.loginButton.stance = 'mouseOver';
+    }
+
+    if (this.activeButton === world) {
+      UICommon.playMouseHoverAudio();
+      world.stance = 'mouseOver';
     }
   }
 
@@ -131,6 +184,7 @@ UILogin.doUpdate = function(msPerTick, camera) {
       if (trigger) {
         UICommon.playMouseClickAudio();
         console.log('login!');
+        camera.y -= 600;
       }
     }
   } else if (this.activeButton === this.dice) {
@@ -142,6 +196,22 @@ UILogin.doUpdate = function(msPerTick, camera) {
       this.canClickDice = false;
       this.updateDice = true;
       UICommon.playMouseClickAudio();
+    }
+  } else if (this.activeButton === world) {
+    const originallyClickedWorld = GUIUtil.pointInRectangle(
+        this.lastClickedPosition,
+        worldRect
+    );
+    if (clickedOnThisUpdate) {
+      const s = !originallyClickedWorld ? 'mouseOver' : 'pressed';
+      world.stance = s;
+    } else {
+      world.stance = 'mouseOver';
+      const trigger = releasedClick && originallyClickedWorld;
+      if (trigger) {
+        UICommon.playMouseClickAudio();
+        console.log('World clicked');
+      }
     }
   }
 

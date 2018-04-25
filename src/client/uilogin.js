@@ -70,32 +70,63 @@ UILogin.initialize = async function() {
   this.diceDelay = 100;
 
   this.newCharStats = Random.generateDiceRollStats();
-
-  this.worldsX = 260;
-  this.worldsY = -800;
+  
+  this.scrollX = -210;
+  this.scrollY = -830;
+  this.scroll = {
+    stance: 0,
+    stances: uiLogin.WorldSelect.scroll.nChildren[0].nChildren.reduce((stances, stance) => {
+      stances[Number(stance.nName)] = stance;
+      return stances;
+    }, {}),
+    open: false,
+    update: msPerTick => {
+      if (this.scroll.open && this.scroll.stance < 3) {
+        this.scroll.stance++;
+      }
+      if (!this.scroll.open && this.scroll.stance > 0) {
+        this.scroll.stance--;
+      }
+    },
+    draw: (camera, lag, msPerTick, tdelta) => {
+      const currentFrame = this.scroll.stances[this.scroll.stance];
+      const currentImage = currentFrame.nGetImage();
+      DRAW_IMAGE({
+        img: currentImage,
+        dx: this.scrollX - camera.x,
+        dy: this.scrollY - camera.y,
+      });
+    },
+    layer: 2,
+  };
+  MapleMap.objects.push(this.scroll);
+  
+  this.worldsX = 300;
+  this.worldsY = -805;
+  this.worldsGap = 27;
   this.worlds = [];
   for(let i = 0; i < this.NUMBER_OF_WORLDS; i++) {
-    this.worlds.push(
-        {
-            stance: 'normal',
-            stances: uiLogin.WorldSelect.BtWorld[i].nChildren.reduce((stances, stance) => {
-              stances[stance.nName] = stance.nChildren[0];
-              return stances;
-            }, {}),
-            update: msPerTick => {
-            },
-            draw: (camera, lag, msPerTick, tdelta) => {
-              const currentFrame = this.worlds[i].stances[this.worlds[i].stance];
-              const currentImage = currentFrame.nGetImage();
-              DRAW_IMAGE({
-                  img: currentImage,
-                  dx: this.worldsX - camera.x - 24 * i,
-                  dy: this.worldsY - camera.y
-              });
-            },
-            layer: 2,
-        }
-    );
+    this.worlds.push({
+      stance: 'normal',
+      stances: uiLogin.WorldSelect.BtWorld[i].nChildren.reduce((stances, stance) => {
+        stances[stance.nName] = stance.nChildren[0];
+        return stances;
+      }, {}),
+      active: false,
+      update: msPerTick => {
+      },
+      draw: (camera, lag, msPerTick, tdelta) => {
+        const nStance = this.worlds[i].active ? 'mouseOver' : this.worlds[i].stance;
+        const currentFrame = this.worlds[i].stances[nStance];
+        const currentImage = currentFrame.nGetImage();
+        DRAW_IMAGE({
+          img: currentImage,
+          dx: this.worldsX - camera.x - this.worldsGap * i,
+          dy: this.worldsY - camera.y + (this.worlds[i].active && 5),
+        });
+      },
+      layer: 2,
+    });
     MapleMap.objects.push(this.worlds[i]);
   }
 };
@@ -139,7 +170,7 @@ UILogin.doUpdate = function(msPerTick, camera) {
     world = this.worlds[i];
     const worldImage = world.stances.normal.nGetImage();
     worldRect = {
-      x: this.worldsX - camera.x - 24 * i,
+      x: this.worldsX - camera.x - this.worldsGap * i,
       y: this.worldsY - camera.y,
       width: worldImage.width,
       height: worldImage.height,
@@ -183,6 +214,8 @@ UILogin.doUpdate = function(msPerTick, camera) {
       const trigger = releasedClick && originallyClickedLoginButton;
       if (trigger) {
         UICommon.playMouseClickAudio();
+        this.inputUsn.remove();
+        this.inputPwd.remove();
         console.log('login!');
         camera.y -= 600;
       }
@@ -209,6 +242,9 @@ UILogin.doUpdate = function(msPerTick, camera) {
       world.stance = 'mouseOver';
       const trigger = releasedClick && originallyClickedWorld;
       if (trigger) {
+        this.worlds.forEach(w => w.active = false);
+        world.active = true;
+        this.scroll.open = true;
         UICommon.playMouseClickAudio();
         console.log('World clicked');
       }

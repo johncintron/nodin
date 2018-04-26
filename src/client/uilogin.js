@@ -1,5 +1,6 @@
 import DRAW_IMAGE from './drawimage';
 import DRAW_TEXT from './drawtext';
+import PLAY_AUDIO from './playaudio';
 import DRAW_RECT from './drawrect';
 import GameCanvas from './gamecanvas';
 import WZManager from './wzmanager';
@@ -71,6 +72,11 @@ UILogin.initialize = async function() {
 
   this.newCharStats = Random.generateDiceRollStats();
   
+  const sounds = await WZManager.get('Sound.wz/UI.img');
+  
+  this.rollUpAudio = sounds.RollUp.nGetAudio();
+  this.rollDownAudio = sounds.RollDown.nGetAudio();
+  
   this.scrollX = -210;
   this.scrollY = -830;
   this.scroll = {
@@ -117,13 +123,13 @@ UILogin.initialize = async function() {
       update: msPerTick => {
       },
       draw: (camera, lag, msPerTick, tdelta) => {
-        const nStance = this.worlds[i].active ? 'mouseOver' : this.worlds[i].stance;
+        const nStance = this.worlds[i].active ? 'pressed' : this.worlds[i].stance;
         const currentFrame = this.worlds[i].stances[nStance];
         const currentImage = currentFrame.nGetImage();
         DRAW_IMAGE({
           img: currentImage,
           dx: this.worldsX - camera.x - this.worldsGap * i,
-          dy: this.worldsY - camera.y + (this.worlds[i].active && 5),
+          dy: this.worldsY - camera.y,
         });
       },
       layer: 2,
@@ -132,7 +138,7 @@ UILogin.initialize = async function() {
   }
   
   this.worldLogoX = -135;
-  this.worldLogoY = -680;
+  this.worldLogoY = -690;
   this.worldLogo = {
     stance: 0,
     stances: uiLogin.WorldSelect.world.nChildren.reduce((stances, stance) => {
@@ -159,10 +165,47 @@ UILogin.initialize = async function() {
   };
   MapleMap.objects.push(this.worldLogo);
   
-  this.channelsX = -210;
-  this.channelsY = -700;
+  this.channelsX = -135;
+  this.channelsY = -632;
+  this.channelsRowGap = 32;
+  this.channelsColGap = 94;
   this.channels = [];
-  // TODO Implement channels (uiLogin.WorldSelect.channel)
+  const chgauge = uiLogin.WorldSelect.channel.chgauge;
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 4; col++) {
+      let index = row * 4 + col;
+      this.channels.push({
+        stance: 'normal',
+        stances: uiLogin.WorldSelect.channel[index].nChildren.reduce((stances, stance) => {
+          stances[stance.nName] = stance;
+          return stances;
+        }, {}),
+        update: msPerTick => {
+        },
+        draw: (camera, lag, msPerTick, tdelta) => {
+          if (this.scroll.open) {
+            const currentFrame = this.channels[index].stances[this.channels[index].stance];
+            const currentImage = currentFrame.nGetImage();
+            DRAW_IMAGE({
+              img: currentImage,
+              dx: this.channelsX - camera.x + this.channelsColGap * col,
+              dy: this.channelsY - camera.y + this.channelsRowGap * row,
+            });
+          }
+        },
+        layer: 2,
+      });
+      MapleMap.objects.push(this.channels[index]);
+    }
+  }
+};
+
+UILogin.playRollUpAudio = function() {
+  PLAY_AUDIO(this.rollUpAudio);
+};
+
+UILogin.playRollDownAudio = function() {
+  PLAY_AUDIO(this.rollDownAudio);
 };
 
 UILogin.doUpdate = function(msPerTick, camera) {
@@ -276,6 +319,7 @@ UILogin.doUpdate = function(msPerTick, camera) {
       const trigger = releasedClick && originallyClickedWorld;
       if (trigger) {
         UICommon.playMouseClickAudio();
+        this.playRollDownAudio();
         this.worlds.forEach(w => w.active = false);
         world.active = true;
         this.scroll.open = true;

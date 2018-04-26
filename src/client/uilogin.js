@@ -16,7 +16,10 @@ UILogin.initialize = async function() {
   await UICommon.initialize();
   const uiLogin = await WZManager.get('UI.wz/Login.img');
   console.dir(uiLogin);
+  
   this.NUMBER_OF_WORLDS = 20;
+  this.cameraMove = 0;
+  
   this.clicked = false;
   this.lastClickedPosition = {};
   this.activeButton = null;
@@ -77,8 +80,11 @@ UILogin.initialize = async function() {
   this.rollUpAudio = sounds.RollUp.nGetAudio();
   this.rollDownAudio = sounds.RollDown.nGetAudio();
   
+  const scrollDelay = 100;
+  
   this.scrollX = -210;
   this.scrollY = -830;
+  this.scrollDelay = scrollDelay;
   this.scroll = {
     stance: 0,
     stances: uiLogin.WorldSelect.scroll.nChildren[0].nChildren.reduce((stances, stance) => {
@@ -86,12 +92,30 @@ UILogin.initialize = async function() {
       return stances;
     }, {}),
     open: false,
+    show: false,
     update: msPerTick => {
-      if (this.scroll.open && this.scroll.stance < 3) {
-        this.scroll.stance++;
-      }
-      if (!this.scroll.open && this.scroll.stance > 0) {
-        this.scroll.stance--;
+      if (this.scroll.open && (this.scroll.stance !== 3)) {
+        this.scrollDelay -= msPerTick;
+        if (this.scrollDelay <= 0) {
+          this.scroll.stance += 1;
+          this.scrollDelay = scrollDelay - this.scrollDelay;
+        }
+        if (this.scroll.stance === 3) {
+          this.scroll.show = true;
+          this.scrollDelay = scrollDelay;
+        }
+      } else if (!this.scroll.open && (this.scroll.stance !== 0)) {
+        this.scrollDelay -= msPerTick;
+        if (this.scrollDelay <= 0) {
+          this.scroll.stance -= 1;
+          this.scrollDelay = scrollDelay - this.scrollDelay;
+        }
+        if (this.scroll.stance === 2) {
+          this.scroll.show = false;
+        }
+        if (this.scroll.stance === 0) {
+          this.scrollDelay = scrollDelay;
+        }
       }
     },
     draw: (camera, lag, msPerTick, tdelta) => {
@@ -106,6 +130,8 @@ UILogin.initialize = async function() {
     layer: 2,
   };
   MapleMap.objects.push(this.scroll);
+  
+  this.worldSelectAudio = sounds.WorldSelect.nGetAudio();
   
   this.worldsX = 300;
   this.worldsY = -805;
@@ -151,7 +177,7 @@ UILogin.initialize = async function() {
     update: msPerTick => {
     },
     draw: (camera, lag, msPerTick, tdelta) => {
-      if (this.scroll.open) {
+      if (this.scroll.show) {
         const currentFrame = this.worldLogo.stances[this.worldLogo.stance];
         const currentImage = currentFrame.nGetImage();
         DRAW_IMAGE({
@@ -169,8 +195,11 @@ UILogin.initialize = async function() {
   this.channelsY = -632;
   this.channelsRowGap = 32;
   this.channelsColGap = 94;
+  this.chgaugeX = -128;
+  this.chgaugeY = -615;
   this.channels = [];
   const chgauge = uiLogin.WorldSelect.channel.chgauge;
+  const chgaugeImage = uiLogin.WorldSelect.channel.chgauge.nGetImage();
   for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 4; col++) {
       let index = row * 4 + col;
@@ -180,16 +209,24 @@ UILogin.initialize = async function() {
           stances[stance.nName] = stance;
           return stances;
         }, {}),
+        gauge: 50,
         update: msPerTick => {
         },
         draw: (camera, lag, msPerTick, tdelta) => {
-          if (this.scroll.open) {
+          if (this.scroll.show) {
             const currentFrame = this.channels[index].stances[this.channels[index].stance];
             const currentImage = currentFrame.nGetImage();
             DRAW_IMAGE({
               img: currentImage,
               dx: this.channelsX - camera.x + this.channelsColGap * col,
               dy: this.channelsY - camera.y + this.channelsRowGap * row,
+            });
+            DRAW_IMAGE({
+              img: chgaugeImage,
+              dx: this.chgaugeX - camera.x + this.channelsColGap * col,
+              dy: this.chgaugeY - camera.y + this.channelsRowGap * row,
+              sw: chgauge.nWidth * (this.channels[index].gauge / 100),
+              sh: chgauge.nHeight,
             });
           }
         },
@@ -208,6 +245,10 @@ UILogin.playRollDownAudio = function() {
   PLAY_AUDIO(this.rollDownAudio);
 };
 
+UILogin.playWorldSelectAudio = function() {
+  PLAY_AUDIO(this.worldSelectAudio);
+};
+
 UILogin.doUpdate = function(msPerTick, camera) {
   const mousePoint = { x: GameCanvas.mouseX, y: GameCanvas.mouseY };
   const clickedOnLastUpdate = this.clicked;
@@ -216,6 +257,11 @@ UILogin.doUpdate = function(msPerTick, camera) {
   const lastActiveButton = this.activeButton;
   let currActiveButton = null;
 
+  if (this.cameraMove > 0) {
+    this.cameraMove -= 30;
+    camera.y -= 30;
+  }
+  
   const loginButtonImage = this.loginButton.stances.normal.nGetImage();
   const loginButtonRect = {
     x: this.loginButtonX - camera.x,
@@ -272,7 +318,9 @@ UILogin.doUpdate = function(msPerTick, camera) {
     }
 
     if (this.activeButton === world) {
-      UICommon.playMouseHoverAudio();
+      if (world.stance !== 'mouseOver' && world.stance !== 'pressed') {
+        UICommon.playMouseHoverAudio();
+      }
       world.stance = 'mouseOver';
     }
   }
@@ -293,7 +341,7 @@ UILogin.doUpdate = function(msPerTick, camera) {
         UICommon.playMouseClickAudio();
         this.removeInputs();
         console.log('login!');
-        camera.y -= 600;
+        this.cameraMove = 600;
       }
     }
   } else if (this.activeButton === this.dice) {
@@ -319,7 +367,9 @@ UILogin.doUpdate = function(msPerTick, camera) {
       const trigger = releasedClick && originallyClickedWorld;
       if (trigger) {
         UICommon.playMouseClickAudio();
-        this.playRollDownAudio();
+        if (!this.scroll.open) {
+          this.playRollDownAudio();
+        }
         this.worlds.forEach(w => w.active = false);
         world.active = true;
         this.scroll.open = true;

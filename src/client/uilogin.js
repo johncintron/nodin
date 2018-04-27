@@ -9,6 +9,8 @@ import MapleInput from './mapleinput';
 import MapleMap from './maplemap';
 import GUIUtil from './guiutil';
 import Random from './random';
+import Timer from './timer';
+import Easing from './easing';
 
 const UILogin = {};
 
@@ -18,7 +20,24 @@ UILogin.initialize = async function() {
   console.dir(uiLogin);
   
   this.NUMBER_OF_WORLDS = 20;
-  this.cameraMove = 0;
+  this.cameraWork = {
+    start: 0,
+    end: 0,
+    startTime: 0,
+    duration: 400,
+    work: false,
+    step: () => {
+      const diff = Timer.getNow() - this.cameraWork.startTime;
+      const state = diff / this.cameraWork.duration;
+      const pos = Easing.easeOutQuart(state, diff, 0, 1, this.cameraWork.duration);
+      console.log(pos);
+      if (pos > 0.999) {
+        this.cameraWork.work = false;
+        return this.cameraWork.end;
+      }
+      return this.cameraWork.start + ((this.cameraWork.end - this.cameraWork.start) * pos);
+    },
+  };
   
   this.clicked = false;
   this.lastClickedPosition = {};
@@ -79,6 +98,7 @@ UILogin.initialize = async function() {
   
   this.rollUpAudio = sounds.RollUp.nGetAudio();
   this.rollDownAudio = sounds.RollDown.nGetAudio();
+  this.scrollUpAudio = sounds.ScrollUp.nGetAudio();
   
   const scrollDelay = 100;
   
@@ -245,8 +265,20 @@ UILogin.playRollDownAudio = function() {
   PLAY_AUDIO(this.rollDownAudio);
 };
 
+UILogin.playScrollUpAudio = function() {
+  PLAY_AUDIO(this.scrollUpAudio);
+};
+
 UILogin.playWorldSelectAudio = function() {
   PLAY_AUDIO(this.worldSelectAudio);
+};
+
+UILogin.smoothCameraWork = function(moveY, camera, duration=400) {
+  this.cameraWork.startTime = Timer.getNow();
+  this.cameraWork.duration = duration;
+  this.cameraWork.start = camera.y;
+  this.cameraWork.end = camera.y + moveY;
+  this.cameraWork.work = true;
 };
 
 UILogin.doUpdate = function(msPerTick, camera) {
@@ -257,11 +289,10 @@ UILogin.doUpdate = function(msPerTick, camera) {
   const lastActiveButton = this.activeButton;
   let currActiveButton = null;
 
-  if (this.cameraMove > 0) {
-    this.cameraMove -= 30;
-    camera.y -= 30;
+  if (this.cameraWork.work) {
+    camera.y = this.cameraWork.step();
   }
-  
+
   const loginButtonImage = this.loginButton.stances.normal.nGetImage();
   const loginButtonRect = {
     x: this.loginButtonX - camera.x,
@@ -341,7 +372,8 @@ UILogin.doUpdate = function(msPerTick, camera) {
         UICommon.playMouseClickAudio();
         this.removeInputs();
         console.log('login!');
-        this.cameraMove = 600;
+        this.playScrollUpAudio();
+        this.smoothCameraWork(-600, camera, 800);
       }
     }
   } else if (this.activeButton === this.dice) {

@@ -1,5 +1,6 @@
 import DRAW_IMAGE from './drawimage';
 import DRAW_TEXT from './drawtext';
+import PLAY_AUDIO from './playaudio';
 import DRAW_RECT from './drawrect';
 import GameCanvas from './gamecanvas';
 import WZManager from './wzmanager';
@@ -8,13 +9,36 @@ import MapleInput from './mapleinput';
 import MapleMap from './maplemap';
 import GUIUtil from './guiutil';
 import Random from './random';
+import Timer from './timer';
+import Easing from './easing';
 
 const UILogin = {};
 
 UILogin.initialize = async function() {
   await UICommon.initialize();
   const uiLogin = await WZManager.get('UI.wz/Login.img');
-
+  console.dir(uiLogin);
+  
+  this.NUMBER_OF_WORLDS = 20;
+  this.cameraWork = {
+    start: 0,
+    end: 0,
+    startTime: 0,
+    duration: 400,
+    work: false,
+    step: () => {
+      const diff = Timer.getNow() - this.cameraWork.startTime;
+      const state = diff / this.cameraWork.duration;
+      const pos = Easing.easeOutQuart(state, diff, 0, 1, this.cameraWork.duration);
+      console.log(pos);
+      if (pos > 0.999) {
+        this.cameraWork.work = false;
+        return this.cameraWork.end;
+      }
+      return this.cameraWork.start + ((this.cameraWork.end - this.cameraWork.start) * pos);
+    },
+  };
+  
   this.clicked = false;
   this.lastClickedPosition = {};
   this.activeButton = null;
@@ -69,6 +93,192 @@ UILogin.initialize = async function() {
   this.diceDelay = 100;
 
   this.newCharStats = Random.generateDiceRollStats();
+  
+  const sounds = await WZManager.get('Sound.wz/UI.img');
+  
+  this.rollUpAudio = sounds.RollUp.nGetAudio();
+  this.rollDownAudio = sounds.RollDown.nGetAudio();
+  this.scrollUpAudio = sounds.ScrollUp.nGetAudio();
+  
+  const scrollDelay = 100;
+  
+  this.scrollX = -210;
+  this.scrollY = -830;
+  this.scrollDelay = scrollDelay;
+  this.scroll = {
+    stance: 0,
+    stances: uiLogin.WorldSelect.scroll.nChildren[0].nChildren.reduce((stances, stance) => {
+      stances[Number(stance.nName)] = stance;
+      return stances;
+    }, {}),
+    open: false,
+    show: false,
+    update: msPerTick => {
+      if (this.scroll.open && (this.scroll.stance !== 3)) {
+        this.scrollDelay -= msPerTick;
+        if (this.scrollDelay <= 0) {
+          this.scroll.stance += 1;
+          this.scrollDelay = scrollDelay - this.scrollDelay;
+        }
+        if (this.scroll.stance === 3) {
+          this.scroll.show = true;
+          this.scrollDelay = scrollDelay;
+        }
+      } else if (!this.scroll.open && (this.scroll.stance !== 0)) {
+        this.scrollDelay -= msPerTick;
+        if (this.scrollDelay <= 0) {
+          this.scroll.stance -= 1;
+          this.scrollDelay = scrollDelay - this.scrollDelay;
+        }
+        if (this.scroll.stance === 2) {
+          this.scroll.show = false;
+        }
+        if (this.scroll.stance === 0) {
+          this.scrollDelay = scrollDelay;
+        }
+      }
+    },
+    draw: (camera, lag, msPerTick, tdelta) => {
+      const currentFrame = this.scroll.stances[this.scroll.stance];
+      const currentImage = currentFrame.nGetImage();
+      DRAW_IMAGE({
+        img: currentImage,
+        dx: this.scrollX - camera.x,
+        dy: this.scrollY - camera.y,
+      });
+    },
+    layer: 2,
+  };
+  MapleMap.objects.push(this.scroll);
+  
+  this.worldSelectAudio = sounds.WorldSelect.nGetAudio();
+  
+  this.worldsX = 300;
+  this.worldsY = -805;
+  this.worldsGap = 27;
+  this.worlds = [];
+  for(let i = 0; i < this.NUMBER_OF_WORLDS; i++) {
+    this.worlds.push({
+      stance: 'normal',
+      stances: uiLogin.WorldSelect.BtWorld[i].nChildren.reduce((stances, stance) => {
+        stances[stance.nName] = stance.nChildren[0];
+        return stances;
+      }, {}),
+      active: false,
+      id: i,
+      update: msPerTick => {
+      },
+      draw: (camera, lag, msPerTick, tdelta) => {
+        const nStance = this.worlds[i].active ? 'pressed' : this.worlds[i].stance;
+        const currentFrame = this.worlds[i].stances[nStance];
+        const currentImage = currentFrame.nGetImage();
+        DRAW_IMAGE({
+          img: currentImage,
+          dx: this.worldsX - camera.x - this.worldsGap * i,
+          dy: this.worldsY - camera.y,
+        });
+      },
+      layer: 2,
+    });
+    MapleMap.objects.push(this.worlds[i]);
+  }
+  
+  this.worldLogoX = -135;
+  this.worldLogoY = -690;
+  this.worldLogo = {
+    stance: 0,
+    stances: uiLogin.WorldSelect.world.nChildren.reduce((stances, stance) => {
+      const no = Number(stance.nName);
+      if (!Number.isNaN(no)) {
+        stances[no] = stance;
+      }
+      return stances;
+    }, {}),
+    update: msPerTick => {
+    },
+    draw: (camera, lag, msPerTick, tdelta) => {
+      if (this.scroll.show) {
+        const currentFrame = this.worldLogo.stances[this.worldLogo.stance];
+        const currentImage = currentFrame.nGetImage();
+        DRAW_IMAGE({
+          img: currentImage,
+          dx: this.worldLogoX - camera.x,
+          dy: this.worldLogoY - camera.y,
+        });
+      }
+    },
+    layer: 2,
+  };
+  MapleMap.objects.push(this.worldLogo);
+  
+  this.channelsX = -135;
+  this.channelsY = -632;
+  this.channelsRowGap = 32;
+  this.channelsColGap = 94;
+  this.chgaugeX = -128;
+  this.chgaugeY = -615;
+  this.channels = [];
+  const chgauge = uiLogin.WorldSelect.channel.chgauge;
+  const chgaugeImage = uiLogin.WorldSelect.channel.chgauge.nGetImage();
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 4; col++) {
+      let index = row * 4 + col;
+      this.channels.push({
+        stance: 'normal',
+        stances: uiLogin.WorldSelect.channel[index].nChildren.reduce((stances, stance) => {
+          stances[stance.nName] = stance;
+          return stances;
+        }, {}),
+        gauge: 50,
+        update: msPerTick => {
+        },
+        draw: (camera, lag, msPerTick, tdelta) => {
+          if (this.scroll.show) {
+            const currentFrame = this.channels[index].stances[this.channels[index].stance];
+            const currentImage = currentFrame.nGetImage();
+            DRAW_IMAGE({
+              img: currentImage,
+              dx: this.channelsX - camera.x + this.channelsColGap * col,
+              dy: this.channelsY - camera.y + this.channelsRowGap * row,
+            });
+            DRAW_IMAGE({
+              img: chgaugeImage,
+              dx: this.chgaugeX - camera.x + this.channelsColGap * col,
+              dy: this.chgaugeY - camera.y + this.channelsRowGap * row,
+              sw: chgauge.nWidth * (this.channels[index].gauge / 100),
+              sh: chgauge.nHeight,
+            });
+          }
+        },
+        layer: 2,
+      });
+      MapleMap.objects.push(this.channels[index]);
+    }
+  }
+};
+
+UILogin.playRollUpAudio = function() {
+  PLAY_AUDIO(this.rollUpAudio);
+};
+
+UILogin.playRollDownAudio = function() {
+  PLAY_AUDIO(this.rollDownAudio);
+};
+
+UILogin.playScrollUpAudio = function() {
+  PLAY_AUDIO(this.scrollUpAudio);
+};
+
+UILogin.playWorldSelectAudio = function() {
+  PLAY_AUDIO(this.worldSelectAudio);
+};
+
+UILogin.smoothCameraWork = function(moveY, camera, duration=400) {
+  this.cameraWork.startTime = Timer.getNow();
+  this.cameraWork.duration = duration;
+  this.cameraWork.start = camera.y;
+  this.cameraWork.end = camera.y + moveY;
+  this.cameraWork.work = true;
 };
 
 UILogin.doUpdate = function(msPerTick, camera) {
@@ -78,6 +288,10 @@ UILogin.doUpdate = function(msPerTick, camera) {
   const releasedClick = clickedOnLastUpdate && !clickedOnThisUpdate;
   const lastActiveButton = this.activeButton;
   let currActiveButton = null;
+
+  if (this.cameraWork.work) {
+    camera.y = this.cameraWork.step();
+  }
 
   const loginButtonImage = this.loginButton.stances.normal.nGetImage();
   const loginButtonRect = {
@@ -104,15 +318,41 @@ UILogin.doUpdate = function(msPerTick, camera) {
     currActiveButton = this.dice;
   }
 
+  let worldRect = undefined;
+  let world = undefined;
+  for (let i = 0; i < this.NUMBER_OF_WORLDS; i++) {
+    world = this.worlds[i];
+    const worldImage = world.stances.normal.nGetImage();
+    worldRect = {
+      x: this.worldsX - camera.x - this.worldsGap * i,
+      y: this.worldsY - camera.y,
+      width: worldImage.width,
+      height: worldImage.height,
+    };
+    const hoverWorld = GUIUtil.pointInRectangle(mousePoint, worldRect);
+    if (hoverWorld) {
+      currActiveButton = world;
+      break;
+    }
+  }
+
   if (lastActiveButton !== currActiveButton) {
     this.activeButton = currActiveButton;
 
     // reset all buttons
     this.loginButton.stance = 'normal';
+    this.worlds.forEach(w => w.stance = 'normal');
 
     if (this.activeButton === this.loginButton) {
       UICommon.playMouseHoverAudio();
       this.loginButton.stance = 'mouseOver';
+    }
+
+    if (this.activeButton === world) {
+      if (world.stance !== 'mouseOver' && world.stance !== 'pressed') {
+        UICommon.playMouseHoverAudio();
+      }
+      world.stance = 'mouseOver';
     }
   }
 
@@ -130,7 +370,10 @@ UILogin.doUpdate = function(msPerTick, camera) {
       const trigger = releasedClick && originallyClickedLoginButton;
       if (trigger) {
         UICommon.playMouseClickAudio();
+        this.removeInputs();
         console.log('login!');
+        this.playScrollUpAudio();
+        this.smoothCameraWork(-600, camera, 800);
       }
     }
   } else if (this.activeButton === this.dice) {
@@ -142,6 +385,29 @@ UILogin.doUpdate = function(msPerTick, camera) {
       this.canClickDice = false;
       this.updateDice = true;
       UICommon.playMouseClickAudio();
+    }
+  } else if (this.activeButton === world) {
+    const originallyClickedWorld = GUIUtil.pointInRectangle(
+        this.lastClickedPosition,
+        worldRect
+    );
+    if (clickedOnThisUpdate) {
+      const s = !originallyClickedWorld ? 'mouseOver' : 'pressed';
+      world.stance = s;
+    } else {
+      world.stance = 'mouseOver';
+      const trigger = releasedClick && originallyClickedWorld;
+      if (trigger) {
+        UICommon.playMouseClickAudio();
+        if (!this.scroll.open) {
+          this.playRollDownAudio();
+        }
+        this.worlds.forEach(w => w.active = false);
+        world.active = true;
+        this.scroll.open = true;
+        this.worldLogo.stance = world.id;
+        console.log('World clicked');
+      }
     }
   }
 

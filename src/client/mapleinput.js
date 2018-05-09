@@ -50,6 +50,8 @@ class MapleInput {
     });
     input.addEventListener('keydown', e => {
       if (e.keyCode === GameCanvas.keys.enter) {
+        e.preventDefault();
+        e.stopPropagation();
         this.submitListeners.forEach(listener => listener());
       }
     });

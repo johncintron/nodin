@@ -4,6 +4,8 @@ import GameCanvas from './gamecanvas';
 import MyCharacter from './mycharacter';
 import WZManager from './wzmanager';
 import UICommon from './uicommon';
+import MapleInput from './mapleinput';
+import MapleMap from './maplemap';
 
 const UIMap = {};
 
@@ -12,7 +14,49 @@ UIMap.initialize = async function() {
 
   const basic = await WZManager.get('UI.wz/Basic.img');
   this.statusBarLevelDigits = basic.LevelNo.nChildren.map(d => d.nGetImage());
-
+  
+  this.chat = new MapleInput({
+    x: 5,
+    y: 540,
+    width: 530,
+    color: '#000000',
+    background: '#ffffff',
+    height: 13
+  });
+  this.chat.addSubmitListener(() => {
+    const msg = this.chat.input.value;
+    this.chat.input.value = '';
+    if (msg[0] === '!') {
+      const [command, ...commandArgs] = msg.split(' ');
+      console.log(command, commandArgs);
+      switch (command) {
+        case "!level": {
+          const level = Number(commandArgs[0]);
+          if (!Number.isInteger(level) || level > 250 || level < 1) {
+            break;
+          }
+          if (level > MyCharacter.level) {
+            MyCharacter.playLevelUp();
+          }
+          MyCharacter.level = level;
+          break;
+        }
+        case "!map": {
+          const mapId = Number(commandArgs[0]);
+          if (!Number.isInteger(mapId)) {
+            break;
+          }
+          MapleMap.load(mapId);
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    }
+    GameCanvas.releaseFocusInput();
+  });
+  
   const statusBar = await WZManager.get('UI.wz/StatusBar.img');
   this.statusBg = statusBar.base.backgrnd.nGetImage();
   this.statusBg2 = statusBar.base.backgrnd2.nGetImage();
@@ -27,7 +71,9 @@ UIMap.initialize = async function() {
 };
 
 UIMap.doUpdate = function(msPerTick) {
-
+  if (!GameCanvas.focusInput && GameCanvas.focusGame && GameCanvas.isKeyDown('enter')) {
+    this.chat.input.focus();
+  }
   UICommon.doUpdate(msPerTick);
 };
 

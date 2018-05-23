@@ -1,3 +1,5 @@
+import ClickManager from './clickmanager';
+
 const StateManager = {};
 
 StateManager.initialize = function() {
@@ -15,6 +17,7 @@ StateManager.setState = async function(state) {
 StateManager.doUpdate = function(msPerTick, camera) {
   if (!this.transitioning) {
     this.currentState.doUpdate(msPerTick, camera);
+    ClickManager.doUpdate(msPerTick, camera);
   }
 };
 

@@ -9,6 +9,7 @@ StateManager.initialize = function() {
 
 StateManager.setState = async function(state) {
   this.transitioning = true;
+  ClickManager.clearButton();
   await state.initialize();
   this.currentState = state;
   this.transitioning = false;

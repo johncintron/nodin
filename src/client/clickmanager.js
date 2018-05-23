@@ -132,4 +132,9 @@ ClickManager.addButton = function(button) {
   MapleMap.objects.push(button);
 };
 
+ClickManager.clearButton = function() {
+  this.buttons.normalButton = [];
+  this.buttons.frameButton = [];
+};
+
 export default ClickManager;

@@ -43,14 +43,14 @@ ClickManager.doUpdate = function(msPerTick, camera) {
   // hover event
   if (lastActiveButton !== currActiveButton) {
     this.activeButton = currActiveButton;
-    this.buttons.normalButton.forEach(button => button.setStance(STANCE.NORMAL));
+    this.buttons.normalButton.forEach(button => button.stance = STANCE.NORMAL);
     for (let ind in buttons) {
       let button = buttons[ind];
       if (this.activeButton === button) {
         if (button.hoverAudio) {
           UICommon.playMouseHoverAudio();
         }
-        button.setStance(STANCE.MOUSE_OVER);
+        button.stance = STANCE.MOUSE_OVER;
         break;
       }
     }
@@ -67,8 +67,7 @@ ClickManager.doUpdate = function(msPerTick, camera) {
       if (clickedOnThisUpdate) {
         switch (button.constructor) {
           case MapleButton: {
-            const s = !originallyClickedButton ? STANCE.MOUSE_OVER : STANCE.PRESSED;
-            button.setStance(s);
+            button.stance = !originallyClickedButton ? STANCE.MOUSE_OVER : STANCE.PRESSED;
             break;
           }
           case MapleFrameButton: {
@@ -78,20 +77,21 @@ ClickManager.doUpdate = function(msPerTick, camera) {
       } else {
         switch (button.constructor) {
           case MapleButton: {
-            button.setStance(STANCE.MOUSE_OVER);
+            button.stance = STANCE.MOUSE_OVER;
             const trigger = releasedClick && originallyClickedButton;
             if (trigger) {
               if (button.clickAudio) {
                 UICommon.playMouseClickAudio();
               }
-              button.onClick();
+              button.trigger();
             }
             break;
           }
           case MapleFrameButton: {
-            if (releasedClick && originallyClickedButton && button.canClick) {
-              button.setCanClick(false);
-              button.setCanUpdate(true);
+            const trigger = releasedClick && originallyClickedButton && button.canClick;
+            if (trigger) {
+              button.canClick = false;
+              button.canUpdate = true;
               if (button.clickAudio) {
                 UICommon.playMouseClickAudio();
               }

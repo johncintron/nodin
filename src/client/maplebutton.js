@@ -16,7 +16,7 @@ class MapleButton {
       stances[stance.nName] = stance.nChildren[0];
       return stances;
     }, {});
-    this.onUpdate = opts.onUpdate || function(msPerTick, opts) {
+    this.onUpdate = opts.onUpdate || function(msPerTick, self) {
     };
     this.onDraw = opts.onDraw || function(camera, lag, msPerTick, tdelta, opts) {
       const currentFrame = this.stances[this.stance];
@@ -27,7 +27,7 @@ class MapleButton {
         dy: this.y - camera.y,
       });
     };
-    this.onClick = opts.onClick || function(opts) {
+    this.onClick = opts.onClick || function(self) {
     };
     this.layer = opts.layer || 2;
     this.hoverAudio = !(opts.hoverAudio === false);
@@ -36,15 +36,15 @@ class MapleButton {
   }
   
   update(msPerTick) {
-    this.onUpdate(msPerTick, this.opts);
+    this.onUpdate(msPerTick, this);
   }
   
   draw(camera, lag, msPerTick, tdelta) {
-    this.onDraw(camera, lag, msPerTick, tdelta, this.opts);
+    this.onDraw(camera, lag, msPerTick, tdelta, this);
   }
   
   trigger() {
-    this.onClick(this.opts);
+    this.onClick(this);
   }
   
   getRect(camera) {
@@ -55,10 +55,6 @@ class MapleButton {
       width: image.width,
       height: image.height,
     };
-  }
-  
-  setStance(val) {
-    this.stance = val;
   }
 }
 

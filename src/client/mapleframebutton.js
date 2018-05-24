@@ -9,9 +9,9 @@ class MapleFrameButton extends MapleButton {
     this.frame = opts.frame || 0;
     this.delay = opts.delay || 100;
     this.endFrame = opts.endFrame || this.img.length;
-    this.onEndFrame = opts.onEndFrame || function (opts) {
+    this.onEndFrame = opts.onEndFrame || function (self) {
     };
-    this.onDraw = opts.onDraw || function(camera, lag, msPerTick, tdelta, opts) {
+    this.onDraw = opts.onDraw || function(camera, lag, msPerTick, tdelta, self) {
       const currentFrame = this.img[this.frame];
       const currentImage = currentFrame.nGetImage();
       DRAW_IMAGE({
@@ -39,15 +39,7 @@ class MapleFrameButton extends MapleButton {
       }
     };
   }
-  
-  setCanClick(val) {
-    this.canClick = val;
-  }
-  
-  setCanUpdate(val) {
-    this.canUpdate = val;
-  }
-  
+
   getRect(camera) {
     const frame = this.img[0];
     const image = frame.nGetImage();

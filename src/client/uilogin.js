@@ -35,6 +35,7 @@ UILogin.initialize = async function() {
     y: -85,
     img: uiLogin.Title.BtLogin.nChildren,
     onClick: self => {
+      console.log("Current stance: ", self.stance);
       console.log('login!');
     }
   });
@@ -46,6 +47,7 @@ UILogin.initialize = async function() {
     img: uiLogin.NewChar.dice.nChildren,
     onEndFrame: self => {
       this.newCharStats = Random.generateDiceRollStats();
+      console.log("Random stats: ", this.newCharStats);
     },
     hoverAudio: false,
   });

@@ -47,6 +47,9 @@ ClickManager.doUpdate = function(msPerTick, camera) {
     for (let ind in buttons) {
       let button = buttons[ind];
       if (this.activeButton === button) {
+        if (this.activeButton.constructor === MapleButton) {
+          break;
+        }
         if (button.hoverAudio) {
           UICommon.playMouseHoverAudio();
         }

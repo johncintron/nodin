@@ -4,6 +4,8 @@ import { MapleButton } from './maplebutton'
 class MapleFrameButton extends MapleButton {
   constructor(opts) {
     super(opts);
+    delete this.stance;
+    delete this.stances;
     this.canClick = true;
     this.canUpdate = false;
     this.frame = opts.frame || 0;
@@ -21,7 +23,7 @@ class MapleFrameButton extends MapleButton {
       });
     };
     const delay = this.delay;
-    this.onUpdate = opts.onUpdate || function(msPerTick, opts) {
+    this.onUpdate = opts.onUpdate || function(msPerTick, self) {
       if(this.canUpdate) {
         this.delay -= msPerTick;
         if (this.delay <= 0) {
@@ -34,7 +36,7 @@ class MapleFrameButton extends MapleButton {
           this.delay = delay;
           this.canUpdate = false;
           this.canClick = true;
-          this.onEndFrame(opts);
+          this.onEndFrame(this);
         }
       }
     };

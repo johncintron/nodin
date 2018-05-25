@@ -1,4 +1,4 @@
-import { MapleButton, STANCE } from './maplebutton';
+import { MapleButton, BUTTON_STANCE } from './maplebutton';
 import MapleFrameButton from './mapleframebutton';
 import UICommon from './uicommon'
 import GUIUtil from './guiutil';
@@ -30,8 +30,7 @@ ClickManager.doUpdate = function(msPerTick, camera) {
   const buttons = [...this.buttons.normalButton, ...this.buttons.frameButton];
   let currActiveButton = null;
   
-  for (let ind in buttons) {
-    let button = buttons[ind];
+  for (let button of buttons) {
     const buttonRect = button.getRect(camera);
     const hoverButton = GUIUtil.pointInRectangle(mousePoint, buttonRect);
     if (hoverButton) {
@@ -43,9 +42,8 @@ ClickManager.doUpdate = function(msPerTick, camera) {
   // hover event
   if (lastActiveButton !== currActiveButton) {
     this.activeButton = currActiveButton;
-    this.buttons.normalButton.forEach(button => button.stance = STANCE.NORMAL);
-    for (let ind in buttons) {
-      let button = buttons[ind];
+    this.buttons.normalButton.forEach(button => button.stance = BUTTON_STANCE.NORMAL);
+    for (let button of buttons) {
       if (this.activeButton === button) {
         if (this.activeButton.constructor === MapleButton) {
           break;
@@ -53,15 +51,14 @@ ClickManager.doUpdate = function(msPerTick, camera) {
         if (button.hoverAudio) {
           UICommon.playMouseHoverAudio();
         }
-        button.stance = STANCE.MOUSE_OVER;
+        button.stance = BUTTON_STANCE.MOUSE_OVER;
         break;
       }
     }
   }
   
   // click event
-  for (let ind in buttons) {
-    let button = buttons[ind];
+  for (let button of buttons) {
     if (this.activeButton === button) {
       const originallyClickedButton = GUIUtil.pointInRectangle(
         this.lastClickedPosition,
@@ -70,7 +67,7 @@ ClickManager.doUpdate = function(msPerTick, camera) {
       if (clickedOnThisUpdate) {
         switch (button.constructor) {
           case MapleButton: {
-            button.stance = !originallyClickedButton ? STANCE.MOUSE_OVER : STANCE.PRESSED;
+            button.stance = !originallyClickedButton ? BUTTON_STANCE.MOUSE_OVER : BUTTON_STANCE.PRESSED;
             break;
           }
           case MapleFrameButton: {
@@ -80,7 +77,7 @@ ClickManager.doUpdate = function(msPerTick, camera) {
       } else {
         switch (button.constructor) {
           case MapleButton: {
-            button.stance = STANCE.MOUSE_OVER;
+            button.stance = BUTTON_STANCE.MOUSE_OVER;
             const trigger = releasedClick && originallyClickedButton;
             if (trigger) {
               if (button.clickAudio) {

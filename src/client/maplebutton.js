@@ -1,6 +1,6 @@
 import DRAW_IMAGE from './drawimage';
 
-const STANCE = {
+const BUTTON_STANCE = {
   NORMAL: 'normal',
   MOUSE_OVER: 'mouseOver',
   PRESSED: 'pressed',
@@ -11,14 +11,14 @@ class MapleButton {
     this.x = opts.x || 0;
     this.y = opts.y || 0;
     this.img = opts.img || {};
-    this.stance = opts.stance || STANCE.NORMAL;
+    this.stance = opts.stance || BUTTON_STANCE.NORMAL;
     this.stances = this.img.reduce((stances, stance) => {
       stances[stance.nName] = stance.nChildren[0];
       return stances;
     }, {});
     this.onUpdate = opts.onUpdate || function(msPerTick, self) {
     };
-    this.onDraw = opts.onDraw || function(camera, lag, msPerTick, tdelta, opts) {
+    this.onDraw = opts.onDraw || function(camera, lag, msPerTick, tdelta, self) {
       const currentFrame = this.stances[this.stance];
       const currentImage = currentFrame.nGetImage();
       DRAW_IMAGE({
@@ -58,4 +58,4 @@ class MapleButton {
   }
 }
 
-export { MapleButton, STANCE }
+export { MapleButton, BUTTON_STANCE }

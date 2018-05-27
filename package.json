@@ -6,7 +6,7 @@
   "dependencies": {
     "express": "^4.16.2",
     "javascript-obfuscator": "^0.14.3",
-    "rollup": "^0.56.5",
+    "rollup": "^0.59.3",
     "socket.io": "^2.0.4"
   },
   "devDependencies": {},

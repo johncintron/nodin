@@ -30,7 +30,7 @@ ClickManager.doUpdate = function(msPerTick, camera) {
     return;
   }
   
-  for (let button of buttons) {
+  for (const button of buttons) {
     const buttonRect = button.getRect(camera);
     const hoverButton = GUIUtil.pointInRectangle(mousePoint, buttonRect);
     if (hoverButton) {
@@ -43,7 +43,7 @@ ClickManager.doUpdate = function(msPerTick, camera) {
   if (lastActiveButton !== currActiveButton) {
     this.activeButton = currActiveButton;
     this.buttons.stanceButton.forEach(button => button.stance = BUTTON_STANCE.NORMAL);
-    for (let button of this.buttons.stanceButton) {
+    for (const button of this.buttons.stanceButton) {
       if (this.activeButton === button) {
         if (button.hoverAudio) {
           UICommon.playMouseHoverAudio();
@@ -55,7 +55,7 @@ ClickManager.doUpdate = function(msPerTick, camera) {
   }
   
   // click event
-  for (let button of buttons) {
+  for (const button of buttons) {
     if (this.activeButton === button) {
       const originallyClickedButton = GUIUtil.pointInRectangle(
         this.lastClickedPosition,

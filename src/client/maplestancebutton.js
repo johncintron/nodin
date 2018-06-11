@@ -34,6 +34,16 @@ class MapleStanceButton extends MapleButton {
   draw(camera, lag, msPerTick, tdelta) {
     this.onDraw(camera, lag, msPerTick, tdelta, this);
   }
+  
+  getRect(camera) {
+    const buttonImage = this.stances[BUTTON_STANCE.NORMAL].nGetImage();
+    return {
+      x: this.x - camera.x,
+      y: this.y - camera.y,
+      width: buttonImage.width,
+      height: buttonImage.height,
+    };
+  }
 }
 
 export { MapleStanceButton, BUTTON_STANCE };
